@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unser Forum</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 7px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(80deg, #22025e, #830e92);
+            height: 100vh;
+
+
+        }
+        h2 {
+            display: block;
+            font-size: 1.5em;
+            margin-block-start: 0.33em;
+            margin-block-end: 0.33em;
+            margin-inline-start: 0px;
+            margin-inline-end: 0px;
+            font-weight: bold;
+            unicode-bidi: isolate;
+        }
+        .headline{
+            text-align: center;
+        }
+        .container {
+            max-width: 95%;
+            width: 95%;
+            margin: 1%;
+            padding: 1%;
+            padding-left: 10px;
+            border: 1px solid #000000;
+            border-top-left-radius: 50px;
+            border-top-right-radius: 1px;
+            border-bottom-right-radius: 50px;
+            border-bottom-left-radius: 1px;
+            background: linear-gradient(105deg, #4706c0, #e000ff);
+            display: flex;
+            flex-direction: column;
+            height:   90%; /* Füllt den verfügbaren Raum */
+        }
+        .posts {
+            margin-top: 1%;
+            overflow-y: scroll; /* Ermöglicht das Scrollen der Posts */
+            flex-grow: 1; /* Nimmt den verbleibenden Platz ein */
+        }
+        #posts{
+            overflow-y: scroll;
+        }
+        .post {
+           margin-bottom: 8px;
+           padding: 10px;
+           border: 1px solid #ccc;
+           border-top-left-radius: 1px;
+           border-top-right-radius: 20px;
+           border-bottom-right-radius: 20px;
+           border-bottom-left-radius: 20px;
+           background-color: #ffffff80;
+           display: flex;
+           flex-direction: column; /* Stack content vertically */
+           align-items: flex-start; /* Align items to the left */
+           word-wrap: break-word; /* Break long words to fit inside the container */
+           word-break: break-word; /* Break words if they are too long */
+           width: 92%; /* Ensures posts take full width */
+           font-size: 15px;
+        }
+
+       .message {
+            margin-bottom: 5px;
+            word-wrap: break-word; /* Ensure the message text doesn't overflow */
+            word-break: break-word; /* Prevents the text from spilling out */
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #474747;
+            align-self: flex-end; /* Align timestamp to the right */
+            margin-top: 5px;
+            font-weight: cursive;
+        }
+        /* Stellt sicher, dass der Bereich für die Nachrichten unten bleibt */
+#username-warning {
+    position: absolute;
+    bottom: 100px; /* Verhindert, dass es zu nah am unteren Rand ist */
+}
+
+        .username {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #276900;
+        }
+        .username-input{
+            margin-left: 60px;
+        }
+        textarea, input {
+            width: 200px;
+            padding: 6px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            border-radius: 16px;
+        }
+        .sending{
+            align-self:center;
+            display: flex;
+            margin-bottom: 5px;
+            margin-top: 10px;
+            width: 90%;
+        }
+        textarea {
+            width: 70%;
+            height: 20px;
+            padding: 10px;
+            margin-right: 20px;
+            padding-left: 5px;
+            border: 1px solid #ccc;
+            border-top-left-radius: 30px;
+            border-top-right-radius: 30px;
+            border-bottom-right-radius: 30px;
+            border-bottom-left-radius: 1px;
+            font-size: 16px;
+            resize: none;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 15px;
+            color: #fff;
+            background-color: #008cff;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            width: 100px;
+            align-self: center;
+            height: 40px;
+        }
+        button:hover {
+            background-color: #0054b3;
+        }
+        .Links-Container{
+            flex-direction: column;
+            margin-top: 1px;
+        }
+        .Links{
+            padding-right: 10px;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div id="forum-container" class="container">
+        <label for="username"></label><input id="username" class="username-input" type="text" placeholder="Benutzername" />
+        <h2 class="headline">Unser Forum</h2>
+        <div class="posts" id="posts"></div>
+        <div class="sending">
+            <label for="message"></label><textarea id="message" placeholder="Schreibe hier..."></textarea>
+           <button onclick="addPost()">Posten</button>
+        </div>
+    </div>
+
+    <div class="Links-Container">
+      <a class="Links" href="">Impressum</a>
+      <a class="Links" href="">Datenschutz</a>
+    </div>
+    <script>
+        const wordFilter = {
+          "Nigger": "Ni**er",
+          "Neger": "Ne**r",
+          "Negger": "Ne***r",
+          "Niger": "Ni*er",
+          "Heil Hitler": "H**l Hi**er",
+          "Hitler": "Hi**er",
+          "H1tler": "H**ler",
+          "hure": "hu**",
+          "Bastard": "bas**rd",
+          "Hurensohn": "hur****hn",
+          "hurensöhne": "hur****hne"
+        };
+
+function censorMessage(message) {
+    let censoredMessage = message;
+    // Durchlaufe die Wortliste und ersetze jedes Wort
+    for (const [word, replacement] of Object.entries(wordFilter)) {
+        const regex = new RegExp(word, 'gi'); // 'gi' für Groß-/Kleinschreibung ignorieren
+        censoredMessage = censoredMessage.replace(regex, replacement);
+    }
+    return censoredMessage;
+}
+
+window.onload = function () {
+  const container = document.getElementById("posts");
+  if (container) {
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth", // Fügt einen sanften Scroll-Effekt hinzu
+    });
+  }
+};
+
+async function fetchPosts() {
+    const response = await fetch('https://sim08xy.pythonanywhere.com/posts');
+    const posts = await response.json();
+    const postContainer = document.getElementById('posts');
+
+    postContainer.innerHTML = '';
+    posts.forEach(post => {
+    const postDiv = document.createElement('div');
+    postDiv.classList.add('post');
+        
+     // Extrahiere die Nachricht, den Benutzernamen und den Timestamp
+     const [usernameMessage, timestamp, ip_adresse] = post.split(' - ');  // Trennt Nachricht und Benutzername vom Timestamp und Ip-Adresse
+     const [username, message] = usernameMessage.split(': ');  // Trennt Benutzernamen von der Nachricht
+
+    const usernameDiv = document.createElement('div');
+    usernameDiv.classList.add('username');
+    usernameDiv.textContent = username; // Benutzername anzeigen
+
+    const messageDiv = document.createElement('div');
+    messageDiv.textContent = message; // Nachricht anzeigen
+
+    const timestampDiv = document.createElement('span');
+    timestampDiv.classList.add('timestamp');
+    timestampDiv.textContent = timestamp;
+
+    postDiv.appendChild(usernameDiv);
+    postDiv.appendChild(messageDiv);
+    postDiv.appendChild(timestampDiv);
+
+    postContainer.appendChild(postDiv);
+    });
+
+
+}
+
+
+async function getIpAddress() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+    } catch (error) {
+        console.error("IP-Adresse konnte nicht abgerufen werden:", error);
+        return "0.0.0.0"; // Fallback-Wert
+    }
+}
+
+
+async function addPost() {
+    let username = document.getElementById('username').value.trim();
+    let message = document.getElementById('message').value.trim();
+    let ip_addresse = await getIpAddress();
+
+
+    if (username.trim() === '') {
+            if (confirm('Sie haben keinen Benutzername ausgewählt. Wollen sie als Anonymer Nutzer weitermachen?')) {
+              // Save it!
+              useAnonymous();
+              console.log('Anonymer Nutzer');
+            } else {
+              // Do nothing!
+              useCustomUsername();
+              console.log('Eigener Nutzername');
+            }   
+        return;
+    }
+
+    if (message.trim() === '') return;
+
+    if(username.trim() === 'Administrator' || username.trim() === 'administrator'){
+        alert("Du bist nicht der Administrator! Nutze einen anderen Benutzernamen!");
+        return;
+    }
+
+    message = censorMessage(message);
+
+
+    // POST-Anfrage an das PythonAnywhere-Backend
+    await fetch('https://sim08xy.pythonanywhere.com/posts', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, message, ip_addresse})
+    });
+
+
+    document.getElementById('message').value = '';
+    document.getElementById('username').value = username; // Speichert den Benutzernamen
+    fetchPosts();
+}
+
+
+function useAnonymous() {
+    // Setzt den Benutzernamen als Anonymer Nutzer und schickt die Nachricht ab
+    document.getElementById('username').value = 'Anonymer Nutzer';
+    addPost(); // Nachricht senden
+}
+
+function useCustomUsername() {
+    // Versteckt die Auswahl und lässt den Benutzer seinen eigenen Namen eingeben
+    const textField = document.getElementById('username');
+            
+    // Scrollt zum Textfeld
+    textField.scrollIntoView({ behavior: 'smooth' });
+}
+
+
+fetchPosts();
+
+// Fetch posts every 2 seconds
+setInterval(fetchPosts, 10000); // 2000 milliseconds = 2 seconds
+
+    </script>
+</body>
+</html>
